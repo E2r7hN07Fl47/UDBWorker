@@ -3,21 +3,32 @@ from .types import TableRecord
 from .errors import CreateTableError
 
 
-class DBWorker:
-    def __init__(self, filename):
-        self.filename = filename
 
-    def create(self, tablename, *records):
+
+
+class DBWorker:
+    def __init__(self, filename, if_exists=False):
+        self.filename = filename
+        self.if_exists = if_exists
+
+    def _get_conn_cursor(self):
         conn = sqlite3.connect(self.filename)
         cursor = conn.cursor()
+        return conn, cursor
+
+    def create(self, tablename, *records):
+        conn, cursor = self._get_conn_cursor()
 
         pks = []
-        sql_command = f"CREATE TABLE {tablename} (\n"
+        if self.if_exists:
+            sql_command = f"CREATE TABLE IF NOT EXISTS {tablename} (\n"
+        else:
+            sql_command = f"CREATE TABLE {tablename} (\n"
         for record in records:
-            sql_command += record.sql_record + '\n'
+            sql_command += record.sql_record + ',\n'
             if record.is_primary:
                 pks.append(record)
-
+        sql_command = sql_command[:-2] + '\n'
         is_ai = False
         for record in pks:
             if record.is_primary and is_ai:
@@ -50,5 +61,17 @@ class DBWorker:
 
     def check(self):
         pass
+
+    def remove(self, tablename):
+        conn, cursor = self._get_conn_cursor()
+        if self.if_exists:
+            sql_command = f"DROP TABLE IF EXISTS {tablename};"
+        else:
+            sql_command = f"DROP TABLE {tablename};"
+
+        cursor.execute(sql_command)
+        cursor.fetchall()
+        conn.commit()
+        conn.close()
 
 
