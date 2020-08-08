@@ -1,9 +1,6 @@
 import sqlite3
 from .types import TableRecord
-from .errors import CreateTableError
-
-
-
+from .errors import *
 
 
 class DBWorker:
@@ -28,7 +25,9 @@ class DBWorker:
             sql_command += record.sql_record + ',\n'
             if record.is_primary:
                 pks.append(record)
-        sql_command = sql_command[:-2] + '\n'
+        if len(pks) == 0:
+            sql_command = sql_command[:-2] + '\n'
+
         is_ai = False
         for record in pks:
             if record.is_primary and is_ai:
