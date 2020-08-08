@@ -75,6 +75,9 @@ class DBWorker:
         if raw:
             return result
 
+        if len(result) == 0:
+            return None
+
         if len(result) == 1:
             result = result[0]
             if len(result) == 1:
