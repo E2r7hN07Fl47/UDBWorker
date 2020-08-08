@@ -93,6 +93,23 @@ class DBWorker:
     def write(self):
         pass
 
+    def update(self, tablename, data, clauses, **kwargs):
+        conn, cursor = self._get_conn_cursor()
+        if type(clauses) == dict:
+            clauses = list(clauses.items())
+        if len(kwargs) > 0:
+            if clauses is not None:
+                clauses += list(kwargs.items())
+            else:
+                clauses = list(kwargs.items())
+
+        if type(data) == dict:
+            data = list(data.items())
+
+        sql_command = f"UPDATE {tablename} SET "
+
+
+
     def delete(self):
         pass
 
