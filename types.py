@@ -33,7 +33,7 @@ class TableRecord:
         if self.is_auto_inc and self.type != INT:
             raise CreateTypeError("Auto-Increment must be only on INTEGER")
 
-        sql_record = f"{name}   {type}"
+        sql_record = f"{self.name}   {self.type}"
 
         if self.is_not_null:
             sql_record += " NOT NULL"

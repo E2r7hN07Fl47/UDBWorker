@@ -27,7 +27,7 @@ class DBWorker:
 
         if is_ai:
             sql_command += f'PRIMARY KEY("{pks[0].name}" AUTOINCREMENT)\n'
-        else:
+        elif len(pks) > 0:
             all_names = []
             for record in pks:
                 all_names.append(record.name)
