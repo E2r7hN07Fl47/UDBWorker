@@ -1,13 +1,43 @@
 import sqlite3
 from .types import TableRecord
+from .errors import CreateTableError
 
 
 class DBWorker:
     def __init__(self, filename):
         self.filename = filename
 
-    def create(self, record: TableRecord):
-        pass
+    def create(self, tablename, *records):
+        conn = sqlite3.connect(self.filename)
+        cursor = conn.cursor()
+
+        pks = []
+        sql_command = f"CREATE TABLE {tablename} (\n"
+        for record in records:
+            sql_command += record.sql_record + '\n'
+            if record.is_primary:
+                pks.append(record)
+
+        is_ai = False
+        for record in pks:
+            if record.is_primary and is_ai:
+                raise CreateTableError("There must be only one primary key with auto-increment")
+            if record.is_auto_inc:
+                is_ai = True
+
+        if is_ai:
+            sql_command += f'PRIMARY KEY("{pks[0].name}" AUTOINCREMENT)\n'
+        else:
+            all_names = []
+            for record in pks:
+                all_names.append(record.name)
+            sql_command += f'PRIMARY KEY("{",".join(all_names)})"\n'
+        sql_command += ");"
+
+        cursor.execute(sql_command)
+        cursor.fetchall()
+        conn.commit()
+        conn.close()
 
     def read(self):
         pass
