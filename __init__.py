@@ -13,6 +13,14 @@ class DBWorker:
         cursor = conn.cursor()
         return conn, cursor
 
+    def _commit_and_close(self, conn, cursor, command):
+        cursor.execute(command)
+        results = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return results
+
+
     def create(self, tablename, *records):
         conn, cursor = self._get_conn_cursor()
 
@@ -43,14 +51,41 @@ class DBWorker:
                 all_names.append(record.name)
             sql_command += f'PRIMARY KEY("{",".join(all_names)})"\n'
         sql_command += ");"
+        self._commit_and_close(conn, cursor, sql_command)
 
-        cursor.execute(sql_command)
-        cursor.fetchall()
-        conn.commit()
-        conn.close()
+    def read(self, tablename, value, clauses=None, raw=False, **kwargs):
+        conn, cursor = self._get_conn_cursor()
+        if type(clauses) == dict:
+            clauses = list(clauses.items())
+        if len(kwargs) > 0:
+            if clauses is not None:
+                clauses += list(kwargs.items())
+            else:
+                clauses = list(kwargs.items())
 
-    def read(self):
-        pass
+        sql_command = f"SELECT {value} FROM {tablename}"
+        if clauses is not None:
+            sql_command += " WHERE"
+            for cl in clauses:
+                column, key = cl
+                sql_command += f" {column}='{key}' AND"
+            sql_command = sql_command[:-4]
+        sql_command += ";"
+        result = self._commit_and_close(conn, cursor, sql_command)
+        if raw:
+            return result
+
+        if len(result) == 1:
+            result = result[0]
+            if len(result) == 1:
+                result = result[0]
+        else:
+            ret = []
+            for res in result:
+                if len(res) == 1:
+                    ret.append(res[0])
+            result = ret
+        return result
 
     def write(self):
         pass
@@ -68,9 +103,6 @@ class DBWorker:
         else:
             sql_command = f"DROP TABLE {tablename};"
 
-        cursor.execute(sql_command)
-        cursor.fetchall()
-        conn.commit()
-        conn.close()
+        self._commit_and_close(conn, cursor, sql_command)
 
 
