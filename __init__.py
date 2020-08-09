@@ -8,22 +8,16 @@ class DBWorker:
         self.filename = filename
         self.if_exists = if_exists
 
-    def _get_conn_cursor(self):
+    def _execute_sql(self, command):
         conn = sqlite3.connect(self.filename)
         cursor = conn.cursor()
-        return conn, cursor
-
-    def _commit_and_close(self, conn, cursor, command):
         cursor.execute(command)
         results = cursor.fetchall()
         conn.commit()
         conn.close()
         return results
 
-
     def create(self, tablename, *records):
-        conn, cursor = self._get_conn_cursor()
-
         pks = []
         if self.if_exists:
             sql_command = f"CREATE TABLE IF NOT EXISTS {tablename} (\n"
@@ -51,10 +45,9 @@ class DBWorker:
                 all_names.append(record.name)
             sql_command += f'PRIMARY KEY("{",".join(all_names)})"\n'
         sql_command += ");"
-        self._commit_and_close(conn, cursor, sql_command)
+        self._execute_sql(sql_command)
 
     def read(self, tablename, value, clauses=None, raw=False, **kwargs):
-        conn, cursor = self._get_conn_cursor()
         if type(clauses) == dict:
             clauses = list(clauses.items())
         if len(kwargs) > 0:
@@ -71,7 +64,7 @@ class DBWorker:
                 sql_command += f" {column}='{key}' AND"
             sql_command = sql_command[:-4]
         sql_command += ";"
-        result = self._commit_and_close(conn, cursor, sql_command)
+        result = self._execute_sql(sql_command)
         if raw:
             return result
 
@@ -90,11 +83,34 @@ class DBWorker:
             result = ret
         return result
 
-    def write(self):
-        pass
+    def write(self, tablename, data=None, **kwargs):
+        if type(data) == dict:
+            data = list(data.items())
+        if len(kwargs) > 0:
+            if data is not None:
+                data += list(kwargs.items())
+            else:
+                data = list(kwargs.items())
+        sql_command = f"INSERT INTO {tablename} ("
+
+        keys = []
+        for record in data:
+            column = record[0]
+            key = list(record[1])
+            keys.append(key)
+            sql_command += f"{column}, "
+        sql_command = sql_command[:-2]
+        sql_command += ") VALUES ("
+        for i in range(len(keys[0])):
+            for key in keys:
+                sql_command += f"'{key[i]}', "
+            sql_command = sql_command[:-2]
+            sql_command += "), ("
+        sql_command = sql_command[:-3]
+        sql_command += ";"
+        self._execute_sql(sql_command)
 
     def update(self, tablename, data, clauses, **kwargs):
-        conn, cursor = self._get_conn_cursor()
         if type(clauses) == dict:
             clauses = list(clauses.items())
         if len(kwargs) > 0:
@@ -106,9 +122,18 @@ class DBWorker:
         if type(data) == dict:
             data = list(data.items())
 
-        sql_command = f"UPDATE {tablename} SET "
-
-
+        sql_command = f"UPDATE {tablename} SET"
+        for record in data:
+            column, key = record
+            sql_command += f" {column}='{key}',"
+        sql_command = sql_command[:-1]
+        sql_command += " WHERE"
+        for cl in clauses:
+            column, key = cl
+            sql_command += f" {column}='{key}',"
+        sql_command = sql_command[:-1]
+        sql_command += ";"
+        self._execute_sql(sql_command)
 
     def delete(self):
         pass
@@ -117,12 +142,10 @@ class DBWorker:
         pass
 
     def remove(self, tablename):
-        conn, cursor = self._get_conn_cursor()
         if self.if_exists:
             sql_command = f"DROP TABLE IF EXISTS {tablename};"
         else:
             sql_command = f"DROP TABLE {tablename};"
-
-        self._commit_and_close(conn, cursor, sql_command)
+        self._execute_sql(sql_command)
 
 
