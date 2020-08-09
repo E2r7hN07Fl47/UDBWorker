@@ -4,6 +4,14 @@ from .errors import *
 
 
 class DBWorker:
+    """
+    :param filename: Name of database file
+    :type filename: str
+
+    :param if_exists: Use IF EXISTS checks (default - False)
+    :type filename: bool
+    """
+
     def __init__(self, filename, if_exists=False):
         self.filename = filename
         self.if_exists = if_exists
@@ -18,6 +26,14 @@ class DBWorker:
         return results
 
     def create(self, tablename, *records):
+        """
+        :param tablename: Table name
+        :type tablename: str
+
+        :param records: Columns
+        :type records: types.TableRecord
+        """
+
         pks = []
         if self.if_exists:
             sql_command = f"CREATE TABLE IF NOT EXISTS {tablename} (\n"
@@ -48,6 +64,22 @@ class DBWorker:
         self._execute_sql(sql_command)
 
     def read(self, tablename, value, clauses=None, raw=False, **kwargs):
+        """
+        :param tablename: Table name
+        :type tablename: str
+
+        :param value: Column name of value to read
+        :type value: str
+
+        :param clauses: Clauses to read exactly (default - None)
+        :type clauses: dict or list or None
+
+        :param raw: Return raw result (default - False)
+        :type raw: bool
+
+        :param kwargs: As clauses
+        """
+
         if type(clauses) == dict:
             clauses = list(clauses.items())
         if len(kwargs) > 0:
@@ -84,6 +116,17 @@ class DBWorker:
         return result
 
     def write(self, tablename, data=None, **kwargs):
+        """
+        :param tablename: Table name
+        :type tablename: str
+
+        :param data: Data to write, [["column1", ["value1, "value2]], ["column2, ["value1", "value2"]] or
+                                    {"column1": ["value1", "value2"], "column2": ["value1", "value2"]}
+        :type data: dict or list
+
+        :param kwargs: As data
+        """
+
         if type(data) == dict:
             data = list(data.items())
         if len(kwargs) > 0:
@@ -111,6 +154,19 @@ class DBWorker:
         self._execute_sql(sql_command)
 
     def update(self, tablename, data, clauses, **kwargs):
+        """
+        :param tablename: Table name
+        :type tablename: str
+
+        :param data: Data to update
+        :type data: dict or list
+
+        :param clauses: Clauses to update exactly (default - None)
+        :type clauses: dict or list
+
+        :param kwargs: As clauses
+        """
+
         if type(clauses) == dict:
             clauses = list(clauses.items())
         if len(kwargs) > 0:
@@ -142,6 +198,11 @@ class DBWorker:
         pass
 
     def remove(self, tablename):
+        """
+        :param tablename: Table name
+        :type tablename: str
+        """
+
         if self.if_exists:
             sql_command = f"DROP TABLE IF EXISTS {tablename};"
         else:
