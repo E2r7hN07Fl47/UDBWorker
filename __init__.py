@@ -191,13 +191,26 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def delete(self):
-        pass
+    def delete(self, tablename, clauses=None, **kwargs):
+        if type(clauses) == dict:
+            clauses = list(clauses.items())
+        if len(kwargs) > 0:
+            if clauses is not None:
+                clauses += list(kwargs.items())
+            else:
+                clauses = list(kwargs.items())
+        sql_command = f"DELETE FROM {tablename} WHERE "
+        for cl in clauses:
+            column, key = cl
+            sql_command += f"{column}='{key}' AND "
+        sql_command = sql_command[:-5]
+        sql_command += ";"
+        self._execute_sql(sql_command)
 
     def check(self):
         pass
 
-    def remove(self, tablename):
+    def remove_table(self, tablename):
         """
         :param tablename: Table name
         :type tablename: str
