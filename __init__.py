@@ -63,7 +63,7 @@ class DBWorker:
         sql_command += ");"
         self._execute_sql(sql_command)
 
-    def read(self, tablename, value, clauses=None, raw=False, **kwargs):
+    def read(self, tablename, value, conditions=None, raw=False, **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
@@ -71,28 +71,28 @@ class DBWorker:
         :param value: Column name of value to read
         :type value: str
 
-        :param clauses: Clauses to read exactly (default - None)
-        :type clauses: dict or list or None
+        :param conditions: Conditions to read exactly (default - None)
+        :type conditions: dict or list or None
 
         :param raw: Return raw result (default - False)
         :type raw: bool
 
-        :param kwargs: As clauses
+        :param kwargs: As conditions
         """
 
-        if type(clauses) == dict:
-            clauses = list(clauses.items())
+        if type(conditions) == dict:
+            clauses = list(conditions.items())
         if len(kwargs) > 0:
-            if clauses is not None:
-                clauses += list(kwargs.items())
+            if conditions is not None:
+                conditions += list(kwargs.items())
             else:
-                clauses = list(kwargs.items())
+                conditions = list(kwargs.items())
 
         sql_command = f"SELECT {value} FROM {tablename}"
-        if clauses is not None:
+        if conditions is not None:
             sql_command += " WHERE"
-            for cl in clauses:
-                column, key = cl
+            for cond in conditions:
+                column, key = cond
                 sql_command += f" {column}='{key}' AND"
             sql_command = sql_command[:-4]
         sql_command += ";"
@@ -153,7 +153,7 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def update(self, tablename, data, clauses, **kwargs):
+    def update(self, tablename, data, conditions, **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
@@ -161,19 +161,19 @@ class DBWorker:
         :param data: Data to update
         :type data: dict or list
 
-        :param clauses: Clauses to update exactly (default - None)
-        :type clauses: dict or list
+        :param conditions: Conditions to update exactly (default - None)
+        :type conditions: dict or list
 
-        :param kwargs: As clauses
+        :param kwargs: As conditions
         """
 
-        if type(clauses) == dict:
-            clauses = list(clauses.items())
+        if type(conditions) == dict:
+            conditions = list(conditions.items())
         if len(kwargs) > 0:
-            if clauses is not None:
-                clauses += list(kwargs.items())
+            if conditions is not None:
+                conditions += list(kwargs.items())
             else:
-                clauses = list(kwargs.items())
+                conditions = list(kwargs.items())
 
         if type(data) == dict:
             data = list(data.items())
@@ -184,24 +184,33 @@ class DBWorker:
             sql_command += f" {column}='{key}',"
         sql_command = sql_command[:-1]
         sql_command += " WHERE"
-        for cl in clauses:
-            column, key = cl
+        for cond in conditions:
+            column, key = cond
             sql_command += f" {column}='{key}',"
         sql_command = sql_command[:-1]
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def delete(self, tablename, clauses=None, **kwargs):
-        if type(clauses) == dict:
-            clauses = list(clauses.items())
+    def delete(self, tablename, conditions=None, **kwargs):
+        """
+        :param tablename: Table name
+        :type tablename: str
+
+        :param conditions: Conditions to what delet exactly (default - None)
+        :type conditions: dict or list
+
+        :param kwargs: as conditions
+        """
+        if type(conditions) == dict:
+            conditions = list(conditions.items())
         if len(kwargs) > 0:
-            if clauses is not None:
-                clauses += list(kwargs.items())
+            if conditions is not None:
+                conditions += list(kwargs.items())
             else:
-                clauses = list(kwargs.items())
+                conditions = list(kwargs.items())
         sql_command = f"DELETE FROM {tablename} WHERE "
-        for cl in clauses:
-            column, key = cl
+        for cond in conditions:
+            column, key = cond
             sql_command += f"{column}='{key}' AND "
         sql_command = sql_command[:-5]
         sql_command += ";"
