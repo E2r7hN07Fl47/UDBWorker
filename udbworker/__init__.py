@@ -1,5 +1,5 @@
 import sqlite3
-from .types import TableRecord
+from .types import *
 from .errors import *
 
 
@@ -72,7 +72,7 @@ class DBWorker:
         :type value: str
 
         :param conditions: Conditions to read exactly (default - None)
-        :type conditions: dict or list or None
+        :type conditions: dict or list or tuple or None
 
         :param raw: Return raw result (default - False)
         :type raw: bool
@@ -81,7 +81,7 @@ class DBWorker:
         """
 
         if type(conditions) == dict:
-            clauses = list(conditions.items())
+            conditions = list(conditions.items())
         if len(kwargs) > 0:
             if conditions is not None:
                 conditions += list(kwargs.items())
