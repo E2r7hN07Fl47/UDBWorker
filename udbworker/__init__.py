@@ -122,31 +122,38 @@ class DBWorker:
             result = ret
         return result
 
-    def write(self, tablename, data=None, **kwargs):
+    def write(self, tablename, data=[], **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
 
-        :param data: Data to write, [["column1", ["value1, "value2]], ["column2, ["value1", "value2"]] or
-                                    {"column1": ["value1", "value2"], "column2": ["value1", "value2"]}
-        :type data: dict or list
+        :param data: Data to write, [["column1", ["value1", "value2"]], ["column2, "value1"] or
+                                     {"column1": ["value1", "value2"],  "column2": "value1"}
+        :type data: dict or list or tuple
 
         :param kwargs: As data
         """
 
-        if type(data) == dict:
+        data_type = type(data)
+        if data_type == dict:
             data = list(data.items())
+        elif data_type == tuple:
+            data = list(data)
+
         if len(kwargs) > 0:
-            if data is not None:
-                data += list(kwargs.items())
-            else:
-                data = list(kwargs.items())
+            data += list(kwargs.items())
+
         sql_command = f"INSERT INTO {tablename} ("
 
         keys = []
         for record in data:
             column = record[0]
-            key = list(record[1])
+            key = record[1]
+            key_type = type(key)
+            if key_type == tuple:
+                key = list(key)
+            elif not key_type == list:
+                key = [key]
             keys.append(key)
             sql_command += f"{column}, "
         sql_command = sql_command[:-2]
