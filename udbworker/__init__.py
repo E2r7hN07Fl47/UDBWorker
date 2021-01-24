@@ -63,7 +63,7 @@ class DBWorker:
         sql_command += ");"
         self._execute_sql(sql_command)
 
-    def read(self, tablename, value, conditions=None, raw=False, **kwargs):
+    def read(self, tablename, value, conditions=[], raw=False, **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
@@ -71,8 +71,9 @@ class DBWorker:
         :param value: Column name of value to read
         :type value: str
 
-        :param conditions: Conditions to read exactly (default - None)
-        :type conditions: dict or list or tuple or None
+        :param conditions: Conditions to read exactly (default - empty list)
+        :type conditions: dict or list or tuple
+
 
         :param raw: Return raw result (default - False)
         :type raw: bool
@@ -80,13 +81,19 @@ class DBWorker:
         :param kwargs: As conditions
         """
 
-        if type(conditions) == dict:
+        cond_type = type(conditions)
+
+        if cond_type == tuple:
+            conditions = list(conditions)
+        elif cond_type == dict:
             conditions = list(conditions.items())
+
+        if len(conditions) > 0:
+            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
+                conditions = [conditions]
+
         if len(kwargs) > 0:
-            if conditions is not None:
-                conditions += list(kwargs.items())
-            else:
-                conditions = list(kwargs.items())
+            conditions += list(kwargs.items())
 
         sql_command = f"SELECT {value} FROM {tablename}"
         if conditions is not None:
