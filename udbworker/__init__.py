@@ -173,7 +173,7 @@ class DBWorker:
         :type tablename: str
 
         :param data: Data to update
-        :type data: dict or list
+        :type data: dict or list or tuple
 
         :param conditions: Conditions to update exactly (default - emply list)
         :type conditions: dict or list or tuple
