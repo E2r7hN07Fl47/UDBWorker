@@ -167,7 +167,7 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def update(self, tablename, data, conditions, **kwargs):
+    def update(self, tablename, data, conditions=[], **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
@@ -175,22 +175,36 @@ class DBWorker:
         :param data: Data to update
         :type data: dict or list
 
-        :param conditions: Conditions to update exactly (default - None)
-        :type conditions: dict or list
+        :param conditions: Conditions to update exactly (default - emply list)
+        :type conditions: dict or list or tuple
 
         :param kwargs: As conditions
         """
 
-        if type(conditions) == dict:
-            conditions = list(conditions.items())
-        if len(kwargs) > 0:
-            if conditions is not None:
-                conditions += list(kwargs.items())
-            else:
-                conditions = list(kwargs.items())
+        cond_type = type(conditions)
 
-        if type(data) == dict:
+        if cond_type == tuple:
+            conditions = list(conditions)
+        elif cond_type == dict:
+            conditions = list(conditions.items())
+
+        if len(conditions) > 0:
+            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
+                conditions = [conditions]
+
+        if len(kwargs) > 0:
+            conditions += list(kwargs.items())
+
+        data_type = type(data)
+
+        if data_type == tuple:
+            data = list(data)
+        elif data_type == dict:
             data = list(data.items())
+
+        if len(data) > 0:
+            if not (type(data[0]) == list or type(data[0]) == tuple):
+                data = [data]
 
         sql_command = f"UPDATE {tablename} SET"
         for record in data:
@@ -205,23 +219,28 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def delete(self, tablename, conditions=None, **kwargs):
+    def delete(self, tablename, conditions=[], **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
 
-        :param conditions: Conditions to what delet exactly (default - None)
-        :type conditions: dict or list
+        :param conditions: Conditions to what delet exactly (default - empty list)
+        :type conditions: dict or list or tuple
 
         :param kwargs: as conditions
         """
-        if type(conditions) == dict:
+
+        cond_type = type(conditions)
+
+        if cond_type == tuple:
+            conditions = list(conditions)
+        elif cond_type == dict:
             conditions = list(conditions.items())
-        if len(kwargs) > 0:
-            if conditions is not None:
-                conditions += list(kwargs.items())
-            else:
-                conditions = list(kwargs.items())
+
+        if len(conditions) > 0:
+            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
+                conditions = [conditions]
+
         sql_command = f"DELETE FROM {tablename} WHERE "
         for cond in conditions:
             column, key = cond
