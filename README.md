@@ -12,4 +12,4 @@ Should be Universal (U), but not.
 ### TODO
 - Make check works
 - Add more conditions to use
-- Something else thad I don't know now
+- Something else that I don't know now

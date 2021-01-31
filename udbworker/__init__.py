@@ -1,5 +1,5 @@
 import sqlite3
-from .types import TableRecord
+from .types import *
 from .errors import *
 
 
@@ -9,7 +9,7 @@ class DBWorker:
     :type filename: str
 
     :param if_exists: Use IF EXISTS checks (default - False)
-    :type filename: bool
+    :type if_exists: bool
     """
 
     def __init__(self, filename, if_exists=False):
@@ -63,7 +63,7 @@ class DBWorker:
         sql_command += ");"
         self._execute_sql(sql_command)
 
-    def read(self, tablename, value, conditions=None, raw=False, **kwargs):
+    def read(self, tablename, value, conditions=(), raw=False, **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
@@ -71,8 +71,9 @@ class DBWorker:
         :param value: Column name of value to read
         :type value: str
 
-        :param conditions: Conditions to read exactly (default - None)
-        :type conditions: dict or list or None
+        :param conditions: Conditions to read exactly (default - empty tuple)
+        :type conditions: dict or list or tuple
+
 
         :param raw: Return raw result (default - False)
         :type raw: bool
@@ -80,13 +81,21 @@ class DBWorker:
         :param kwargs: As conditions
         """
 
-        if type(conditions) == dict:
-            clauses = list(conditions.items())
+        if conditions is None:
+            conditions = []
+        cond_type = type(conditions)
+
+        if cond_type == tuple:
+            conditions = list(conditions)
+        elif cond_type == dict:
+            conditions = list(conditions.items())
+
+        if len(conditions) > 0:
+            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
+                conditions = [conditions]
+
         if len(kwargs) > 0:
-            if conditions is not None:
-                conditions += list(kwargs.items())
-            else:
-                conditions = list(kwargs.items())
+            conditions += list(kwargs.items())
 
         sql_command = f"SELECT {value} FROM {tablename}"
         if conditions is not None:
@@ -115,31 +124,39 @@ class DBWorker:
             result = ret
         return result
 
-    def write(self, tablename, data=None, **kwargs):
+    def write(self, tablename, data=(), **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
 
-        :param data: Data to write, [["column1", ["value1, "value2]], ["column2, ["value1", "value2"]] or
-                                    {"column1": ["value1", "value2"], "column2": ["value1", "value2"]}
-        :type data: dict or list
+        :param data: Data to write, [["column1", ["value1", "value2"]], ["column2, ("value1", "value2")] or
+                                     {"column1": ["value1", "value2"],  "column2": "value1"}
+                                     (default - empty tuple)
+        :type data: dict or list or tuple
 
         :param kwargs: As data
         """
 
-        if type(data) == dict:
+        data_type = type(data)
+        if data_type == dict:
             data = list(data.items())
+        elif data_type == tuple:
+            data = list(data)
+
         if len(kwargs) > 0:
-            if data is not None:
-                data += list(kwargs.items())
-            else:
-                data = list(kwargs.items())
+            data += list(kwargs.items())
+
         sql_command = f"INSERT INTO {tablename} ("
 
         keys = []
         for record in data:
             column = record[0]
-            key = list(record[1])
+            key = record[1]
+            key_type = type(key)
+            if key_type == tuple:
+                key = list(key)
+            elif not key_type == list:
+                key = [key]
             keys.append(key)
             sql_command += f"{column}, "
         sql_command = sql_command[:-2]
@@ -153,30 +170,44 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def update(self, tablename, data, conditions, **kwargs):
+    def update(self, tablename, data, conditions=[], **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
 
         :param data: Data to update
-        :type data: dict or list
+        :type data: dict or list or tuple
 
-        :param conditions: Conditions to update exactly (default - None)
-        :type conditions: dict or list
+        :param conditions: Conditions to update exactly (default - emply list)
+        :type conditions: dict or list or tuple
 
         :param kwargs: As conditions
         """
 
-        if type(conditions) == dict:
-            conditions = list(conditions.items())
-        if len(kwargs) > 0:
-            if conditions is not None:
-                conditions += list(kwargs.items())
-            else:
-                conditions = list(kwargs.items())
+        cond_type = type(conditions)
 
-        if type(data) == dict:
+        if cond_type == tuple:
+            conditions = list(conditions)
+        elif cond_type == dict:
+            conditions = list(conditions.items())
+
+        if len(conditions) > 0:
+            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
+                conditions = [conditions]
+
+        if len(kwargs) > 0:
+            conditions += list(kwargs.items())
+
+        data_type = type(data)
+
+        if data_type == tuple:
+            data = list(data)
+        elif data_type == dict:
             data = list(data.items())
+
+        if len(data) > 0:
+            if not (type(data[0]) == list or type(data[0]) == tuple):
+                data = [data]
 
         sql_command = f"UPDATE {tablename} SET"
         for record in data:
@@ -191,23 +222,28 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def delete(self, tablename, conditions=None, **kwargs):
+    def delete(self, tablename, conditions=[], **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
 
-        :param conditions: Conditions to what delet exactly (default - None)
-        :type conditions: dict or list
+        :param conditions: Conditions to what delet exactly (default - empty list)
+        :type conditions: dict or list or tuple
 
         :param kwargs: as conditions
         """
-        if type(conditions) == dict:
+
+        cond_type = type(conditions)
+
+        if cond_type == tuple:
+            conditions = list(conditions)
+        elif cond_type == dict:
             conditions = list(conditions.items())
-        if len(kwargs) > 0:
-            if conditions is not None:
-                conditions += list(kwargs.items())
-            else:
-                conditions = list(kwargs.items())
+
+        if len(conditions) > 0:
+            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
+                conditions = [conditions]
+
         sql_command = f"DELETE FROM {tablename} WHERE "
         for cond in conditions:
             column, key = cond
