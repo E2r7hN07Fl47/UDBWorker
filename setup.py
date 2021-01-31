@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='udbworker',
-      version='0.1',
+      version='0.2',
       description='(not)Universal Database Worker',
       packages=['udbworker'],
       author_email='E2r7hN07Fl47@protonmail.com',

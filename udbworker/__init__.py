@@ -9,7 +9,7 @@ class DBWorker:
     :type filename: str
 
     :param if_exists: Use IF EXISTS checks (default - False)
-    :type filename: bool
+    :type if_exists: bool
     """
 
     def __init__(self, filename, if_exists=False):
@@ -63,7 +63,7 @@ class DBWorker:
         sql_command += ");"
         self._execute_sql(sql_command)
 
-    def read(self, tablename, value, conditions=[], raw=False, **kwargs):
+    def read(self, tablename, value, conditions=(), raw=False, **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
@@ -71,7 +71,7 @@ class DBWorker:
         :param value: Column name of value to read
         :type value: str
 
-        :param conditions: Conditions to read exactly (default - empty list)
+        :param conditions: Conditions to read exactly (default - empty tuple)
         :type conditions: dict or list or tuple
 
 
@@ -81,6 +81,8 @@ class DBWorker:
         :param kwargs: As conditions
         """
 
+        if conditions is None:
+            conditions = []
         cond_type = type(conditions)
 
         if cond_type == tuple:
@@ -122,13 +124,14 @@ class DBWorker:
             result = ret
         return result
 
-    def write(self, tablename, data=[], **kwargs):
+    def write(self, tablename, data=(), **kwargs):
         """
         :param tablename: Table name
         :type tablename: str
 
-        :param data: Data to write, [["column1", ["value1", "value2"]], ["column2, "value1"] or
+        :param data: Data to write, [["column1", ["value1", "value2"]], ["column2, ("value1", "value2")] or
                                      {"column1": ["value1", "value2"],  "column2": "value1"}
+                                     (default - empty tuple)
         :type data: dict or list or tuple
 
         :param kwargs: As data
