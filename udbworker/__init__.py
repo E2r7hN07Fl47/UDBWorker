@@ -69,7 +69,7 @@ class DBWorker:
         :type tablename: str
 
         :param value: Column name of value to read
-        :type value: str
+        :type value: str or list or tuple
 
         :param conditions: Conditions to read exactly (default - empty tuple)
         :type conditions: dict or list or tuple
@@ -97,6 +97,9 @@ class DBWorker:
         if len(kwargs) > 0:
             conditions += list(kwargs.items())
 
+        if type(value) in (list, tuple):
+            value = ", ".join(str(v) for v in value)
+
         sql_command = f"SELECT {value} FROM {tablename}"
         if conditions is not None:
             sql_command += " WHERE"
@@ -114,7 +117,7 @@ class DBWorker:
 
         if len(result) == 1:
             result = result[0]
-            if len(result) == 1:
+            if len(result) == 1 and ',' not in value:
                 result = result[0]
         else:
             ret = []
