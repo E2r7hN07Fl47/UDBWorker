@@ -1,6 +1,7 @@
 import sqlite3
 from .types import *
 from .errors import *
+from typing import Union, Any
 
 
 class DBWorker:
@@ -12,11 +13,11 @@ class DBWorker:
     :type if_exists: bool
     """
 
-    def __init__(self, filename, if_exists=False):
+    def __init__(self, filename: str, if_exists: bool = False) -> None:
         self.filename = filename
         self.if_exists = if_exists
 
-    def _execute_sql(self, command):
+    def _execute_sql(self, command: str) -> list:
         conn = sqlite3.connect(self.filename)
         cursor = conn.cursor()
         cursor.execute(command)
@@ -25,13 +26,13 @@ class DBWorker:
         conn.close()
         return results
 
-    def create(self, tablename, *records):
+    def create(self, tablename: str, *records: TableRecord) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param records: Columns
-        :type records: types.TableRecord
+        :type records: TableRecord
         """
 
         pks = []
@@ -63,16 +64,17 @@ class DBWorker:
         sql_command += ");"
         self._execute_sql(sql_command)
 
-    def read(self, tablename, value, conditions=(), raw=False, **kwargs):
+    def read(self, tablename: str, value: Union[str, list, tuple],
+             conditions: Union[dict, list, tuple] = (), raw: bool = False, **kwargs) -> Any:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param value: Column name of value to read
-        :type value: str or list or tuple
+        :type value: Union[str, list, tuple]
 
         :param conditions: Conditions to read exactly (default - empty tuple)
-        :type conditions: dict or list or tuple
+        :type conditions: Union[dict, list, tuple]
 
 
         :param raw: Return raw result (default - False)
@@ -132,14 +134,14 @@ class DBWorker:
             result = ret
         return result
 
-    def write(self, tablename, data, **kwargs):
+    def write(self, tablename: str, data: Union[dict, list, tuple], **kwargs) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param data: Data to write, [["column1", ["value1", "value2"]], ["column2, ("value1", "value2")] or
-                                     {"column1": ["value1", "value2"],  "column2": "value1"}
-        :type data: dict or list or tuple
+                                     {"column1": ["value1", "value2"],  "column2":  ["value1", "value2"]}
+        :type data: Union[dict, list, tuple]
 
         :param kwargs: As data
         """
@@ -182,16 +184,17 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def update(self, tablename, data, conditions=(), **kwargs):
+    def update(self, tablename: str, data: Union[dict, list, tuple],
+               conditions: Union[dict, list, tuple] = (), **kwargs) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param data: Data to update
-        :type data: dict or list or tuple
+        :type data: Union[dict, list, tuple]
 
         :param conditions: Conditions to update exactly (default - empty tuple)
-        :type conditions: dict or list or tuple
+        :type conditions: Union[dict, list, tuple]
 
         :param kwargs: As conditions
         """
@@ -245,13 +248,13 @@ class DBWorker:
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def delete(self, tablename, conditions=(), **kwargs):
+    def delete(self, tablename: str, conditions: Union[dict, list, tuple] = (), **kwargs) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param conditions: Conditions to what delete exactly (default - empty tuple)
-        :type conditions: dict or list or tuple
+        :type conditions: Union[dict, list, tuple]
 
         :param kwargs: as conditions
         """
@@ -288,7 +291,7 @@ class DBWorker:
     def check(self):
         pass
 
-    def remove_table(self, tablename):
+    def remove_table(self, tablename: str) -> None:
         """
         :param tablename: Table name
         :type tablename: str
@@ -300,4 +303,10 @@ class DBWorker:
             sql_command = f"DROP TABLE {tablename};"
         self._execute_sql(sql_command)
 
+    def execute_raw(self, sql_command: str) -> list:
+        """
+        :param sql_command: Raw SQL query, use only if had to.
+        :type sql_command: str
+        """
 
+        return self._execute_sql(sql_command)
