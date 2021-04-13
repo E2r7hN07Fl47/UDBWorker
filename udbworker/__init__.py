@@ -65,7 +65,8 @@ class DBWorker:
         self._execute_sql(sql_command)
 
     def read(self, tablename: str, value: Union[str, list, tuple],
-             conditions: Union[dict, list, tuple] = (), raw: bool = False, **kwargs) -> Any:
+             conditions: Union[dict, list, tuple] = (), is_like: Union[dict, list, tuple] = (),
+             raw: bool = False, **kwargs) -> Any:
         """
         :param tablename: Table name
         :type tablename: str
@@ -76,6 +77,8 @@ class DBWorker:
         :param conditions: Conditions to read exactly (default - empty tuple)
         :type conditions: Union[dict, list, tuple]
 
+        :param is_like: DOESN'T WORK! [WIP] Use LIKE in query for every condition (default - empty tuple)
+        :type is_like: Union[dict, list, tuple]  # TODO make it work
 
         :param raw: Return raw result (default - False)
         :type raw: bool
