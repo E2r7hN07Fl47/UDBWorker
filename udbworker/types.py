@@ -42,4 +42,3 @@ class TableRecord:
             sql_record += " UNIQUE"
 
         self.sql_record = sql_record
-

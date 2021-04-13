@@ -1,6 +1,7 @@
 import sqlite3
 from .types import *
 from .errors import *
+from typing import Union, Any
 
 
 class DBWorker:
@@ -12,11 +13,11 @@ class DBWorker:
     :type if_exists: bool
     """
 
-    def __init__(self, filename, if_exists=False):
+    def __init__(self, filename: str, if_exists: bool = False) -> None:
         self.filename = filename
         self.if_exists = if_exists
 
-    def _execute_sql(self, command):
+    def _execute_sql(self, command: str) -> list:
         conn = sqlite3.connect(self.filename)
         cursor = conn.cursor()
         cursor.execute(command)
@@ -25,13 +26,13 @@ class DBWorker:
         conn.close()
         return results
 
-    def create(self, tablename, *records):
+    def create(self, tablename: str, *records: TableRecord) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param records: Columns
-        :type records: types.TableRecord
+        :type records: TableRecord
         """
 
         pks = []
@@ -63,17 +64,21 @@ class DBWorker:
         sql_command += ");"
         self._execute_sql(sql_command)
 
-    def read(self, tablename, value, conditions=(), raw=False, **kwargs):
+    def read(self, tablename: str, value: Union[str, list, tuple],
+             conditions: Union[dict, list, tuple] = (), is_like: Union[dict, list, tuple] = (),
+             raw: bool = False, **kwargs) -> Any:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param value: Column name of value to read
-        :type value: str
+        :type value: Union[str, list, tuple]
 
         :param conditions: Conditions to read exactly (default - empty tuple)
-        :type conditions: dict or list or tuple
+        :type conditions: Union[dict, list, tuple]
 
+        :param is_like: DOESN'T WORK! [WIP] Use LIKE in query for every condition (default - empty tuple)
+        :type is_like: Union[dict, list, tuple]  # TODO make it work
 
         :param raw: Return raw result (default - False)
         :type raw: bool
@@ -97,13 +102,21 @@ class DBWorker:
         if len(kwargs) > 0:
             conditions += list(kwargs.items())
 
+        if type(value) in (list, tuple):
+            value = ", ".join(str(v) for v in value)
+
         sql_command = f"SELECT {value} FROM {tablename}"
         if conditions is not None:
-            sql_command += " WHERE"
+            sql_command += " WHERE "
             for cond in conditions:
                 column, key = cond
-                sql_command += f" {column}='{key}' AND"
-            sql_command = sql_command[:-4]
+                if key is None:
+                    sql_command += f" {column} is NULL AND "
+                elif "'" in key:
+                    sql_command += f'{column}="{key}" AND '
+                else:
+                    sql_command += f" {column}='{key}' AND "
+            sql_command = sql_command[:-5]
         sql_command += ";"
         result = self._execute_sql(sql_command)
         if raw:
@@ -114,7 +127,7 @@ class DBWorker:
 
         if len(result) == 1:
             result = result[0]
-            if len(result) == 1:
+            if len(result) == 1 and ',' not in value:
                 result = result[0]
         else:
             ret = []
@@ -124,15 +137,14 @@ class DBWorker:
             result = ret
         return result
 
-    def write(self, tablename, data=(), **kwargs):
+    def write(self, tablename: str, data: Union[dict, list, tuple], **kwargs) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param data: Data to write, [["column1", ["value1", "value2"]], ["column2, ("value1", "value2")] or
-                                     {"column1": ["value1", "value2"],  "column2": "value1"}
-                                     (default - empty tuple)
-        :type data: dict or list or tuple
+                                     {"column1": ["value1", "value2"],  "column2":  ["value1", "value2"]}
+        :type data: Union[dict, list, tuple]
 
         :param kwargs: As data
         """
@@ -163,23 +175,29 @@ class DBWorker:
         sql_command += ") VALUES ("
         for i in range(len(keys[0])):
             for key in keys:
-                sql_command += f"'{key[i]}', "
+                if key is None:
+                    sql_command += "NULL, "
+                elif "'" in key:
+                    sql_command += f'"{key[i]}", '
+                else:
+                    sql_command += f"'{key[i]}', "
             sql_command = sql_command[:-2]
             sql_command += "), ("
         sql_command = sql_command[:-3]
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def update(self, tablename, data, conditions=[], **kwargs):
+    def update(self, tablename: str, data: Union[dict, list, tuple],
+               conditions: Union[dict, list, tuple] = (), **kwargs) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
         :param data: Data to update
-        :type data: dict or list or tuple
+        :type data: Union[dict, list, tuple]
 
-        :param conditions: Conditions to update exactly (default - emply list)
-        :type conditions: dict or list or tuple
+        :param conditions: Conditions to update exactly (default - empty tuple)
+        :type conditions: Union[dict, list, tuple]
 
         :param kwargs: As conditions
         """
@@ -209,26 +227,37 @@ class DBWorker:
             if not (type(data[0]) == list or type(data[0]) == tuple):
                 data = [data]
 
-        sql_command = f"UPDATE {tablename} SET"
+        sql_command = f"UPDATE {tablename} SET "
         for record in data:
             column, key = record
-            sql_command += f" {column}='{key}',"
-        sql_command = sql_command[:-1]
-        sql_command += " WHERE"
-        for cond in conditions:
-            column, key = cond
-            sql_command += f" {column}='{key}',"
-        sql_command = sql_command[:-1]
+            if key is None:
+                sql_command += f"{column}=NULL, "
+            elif "'" in key:
+                sql_command += f'{column}="{key}", '
+            else:
+                sql_command += f"{column}='{key}', "
+        sql_command = sql_command[:-2]
+        if len(conditions) > 0:
+            sql_command += "WHERE "
+            for cond in conditions:
+                column, key = cond
+                if key is None:
+                    sql_command += f"{column} is NULL AND "
+                elif "'" in key:
+                    sql_command += f'{column}="{key}" AND '
+                else:
+                    sql_command += f"{column}='{key}' AND "
+            sql_command = sql_command[:-5]
         sql_command += ";"
         self._execute_sql(sql_command)
 
-    def delete(self, tablename, conditions=[], **kwargs):
+    def delete(self, tablename: str, conditions: Union[dict, list, tuple] = (), **kwargs) -> None:
         """
         :param tablename: Table name
         :type tablename: str
 
-        :param conditions: Conditions to what delet exactly (default - empty list)
-        :type conditions: dict or list or tuple
+        :param conditions: Conditions to what delete exactly (default - empty tuple)
+        :type conditions: Union[dict, list, tuple]
 
         :param kwargs: as conditions
         """
@@ -240,22 +269,32 @@ class DBWorker:
         elif cond_type == dict:
             conditions = list(conditions.items())
 
+        if len(kwargs) > 0:
+            conditions += list(kwargs.items())
+
         if len(conditions) > 0:
             if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
                 conditions = [conditions]
 
-        sql_command = f"DELETE FROM {tablename} WHERE "
-        for cond in conditions:
-            column, key = cond
-            sql_command += f"{column}='{key}' AND "
-        sql_command = sql_command[:-5]
+        sql_command = f"DELETE FROM {tablename}"
+        if len(conditions) > 0:
+            sql_command += "  WHERE "
+            for cond in conditions:
+                column, key = cond
+                if key is None:
+                    sql_command += f"{column} is NULL AND "
+                elif "'" in key:
+                    sql_command += f'{column}="{key}" AND '
+                else:
+                    sql_command += f"{column}='{key}' AND "
+            sql_command = sql_command[:-5]
         sql_command += ";"
         self._execute_sql(sql_command)
 
     def check(self):
         pass
 
-    def remove_table(self, tablename):
+    def remove_table(self, tablename: str) -> None:
         """
         :param tablename: Table name
         :type tablename: str
@@ -267,4 +306,10 @@ class DBWorker:
             sql_command = f"DROP TABLE {tablename};"
         self._execute_sql(sql_command)
 
+    def execute_raw(self, sql_command: str) -> list:
+        """
+        :param sql_command: Raw SQL query, use only if had to.
+        :type sql_command: str
+        """
 
+        return self._execute_sql(sql_command)
