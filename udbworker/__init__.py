@@ -112,7 +112,7 @@ class DBWorker:
                 column, key = cond
                 if key is None:
                     sql_command += f" {column} is NULL AND "
-                elif "'" in key:
+                elif "'" in str(key):
                     sql_command += f'{column}="{key}" AND '
                 else:
                     sql_command += f" {column}='{key}' AND "
@@ -177,7 +177,7 @@ class DBWorker:
             for key in keys:
                 if key is None:
                     sql_command += "NULL, "
-                elif "'" in key:
+                elif "'" in str(key):
                     sql_command += f'"{key[i]}", '
                 else:
                     sql_command += f"'{key[i]}', "
@@ -232,7 +232,7 @@ class DBWorker:
             column, key = record
             if key is None:
                 sql_command += f"{column}=NULL, "
-            elif "'" in key:
+            elif "'" in str(key):
                 sql_command += f'{column}="{key}", '
             else:
                 sql_command += f"{column}='{key}', "
@@ -243,7 +243,7 @@ class DBWorker:
                 column, key = cond
                 if key is None:
                     sql_command += f"{column} is NULL AND "
-                elif "'" in key:
+                elif "'" in str(key):
                     sql_command += f'{column}="{key}" AND '
                 else:
                     sql_command += f"{column}='{key}' AND "
@@ -283,7 +283,7 @@ class DBWorker:
                 column, key = cond
                 if key is None:
                     sql_command += f"{column} is NULL AND "
-                elif "'" in key:
+                elif "'" in str(key):
                     sql_command += f'{column}="{key}" AND '
                 else:
                     sql_command += f"{column}='{key}' AND "
