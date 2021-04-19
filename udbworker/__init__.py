@@ -74,11 +74,11 @@ class DBWorker:
         :param value: Column name of value to read
         :type value: Union[str, list, tuple]
 
-        :param conditions: Conditions to read exactly (default - empty tuple)
+        :param conditions: Conditions to read, equals (default - empty tuple)
         :type conditions: Union[dict, list, tuple]
 
-        :param is_like: DOESN'T WORK! [WIP] Use LIKE in query for every condition (default - empty tuple)
-        :type is_like: Union[dict, list, tuple]  # TODO make it work
+        :param is_like: Conditions to read, pattern ('%' - for any count, '_' for one in query) (default - empty tuple)
+        :type is_like: Union[dict, list, tuple]
 
         :param raw: Return raw result (default - False)
         :type raw: bool
@@ -99,6 +99,19 @@ class DBWorker:
             if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
                 conditions = [conditions]
 
+        if is_like is None:
+            is_like = []
+        like_type = type(is_like)
+
+        if like_type == tuple:
+            is_like = list(is_like)
+        elif like_type == dict:
+            is_like = list(is_like.items())
+
+        if len(is_like) > 0:
+            if not (type(is_like[0]) == list or type(is_like[0]) == tuple):
+                is_like = [is_like]
+
         if len(kwargs) > 0:
             conditions += list(kwargs.items())
 
@@ -115,8 +128,22 @@ class DBWorker:
                 elif "'" in str(key):
                     sql_command += f'{column}="{key}" AND '
                 else:
-                    sql_command += f" {column}='{key}' AND "
+                    sql_command += f"{column}='{key}' AND "
             sql_command = sql_command[:-5]
+
+        if is_like is not None:
+            if conditions is None:
+                sql_command += " WHERE "
+            else:
+                sql_command += " AND "
+            for cond in is_like:
+                column, key = cond
+                if "'" in str(key):
+                    sql_command += f'{column} LIKE "{key}" AND '
+                else:
+                    sql_command += f"{column} LIKE '{key}' AND "
+            sql_command = sql_command[:-5]
+
         sql_command += ";"
         result = self._execute_sql(sql_command)
         if raw:
@@ -238,7 +265,7 @@ class DBWorker:
                 sql_command += f"{column}='{key}', "
         sql_command = sql_command[:-2]
         if len(conditions) > 0:
-            sql_command += "WHERE "
+            sql_command += " WHERE "
             for cond in conditions:
                 column, key = cond
                 if key is None:
