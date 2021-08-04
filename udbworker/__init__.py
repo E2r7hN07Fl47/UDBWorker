@@ -87,30 +87,24 @@ class DBWorker:
         """
 
         if conditions is None:
-            conditions = []
-        cond_type = type(conditions)
+            conditions = ()
 
-        if cond_type == tuple:
-            conditions = list(conditions)
-        elif cond_type == dict:
-            conditions = list(conditions.items())
+        elif type(conditions) == dict:
+            conditions = tuple(conditions.items())
 
         if len(conditions) > 0:
-            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
-                conditions = [conditions]
+            if not (type(conditions[0]) in (tuple, list)):
+                conditions = (conditions,)
 
         if is_like is None:
-            is_like = []
-        like_type = type(is_like)
+            is_like = ()
 
-        if like_type == tuple:
-            is_like = list(is_like)
-        elif like_type == dict:
-            is_like = list(is_like.items())
+        if type(is_like) == dict:
+            is_like = tuple(is_like.items())
 
         if len(is_like) > 0:
-            if not (type(is_like[0]) == list or type(is_like[0]) == tuple):
-                is_like = [is_like]
+            if not (type(is_like[0]) in (tuple, list)):
+                is_like = (is_like,)
 
         if len(kwargs) > 0:
             conditions += list(kwargs.items())
@@ -119,7 +113,7 @@ class DBWorker:
             value = ", ".join(str(v) for v in value)
 
         sql_command = f"SELECT {value} FROM {tablename}"
-        if conditions is not None:
+        if len(conditions) > 0:
             sql_command += " WHERE "
             for cond in conditions:
                 column, key = cond
@@ -131,8 +125,8 @@ class DBWorker:
                     sql_command += f"{column}='{key}' AND "
             sql_command = sql_command[:-5]
 
-        if is_like is not None:
-            if conditions is None:
+        if len(is_like) > 0:
+            if len(conditions) == 0:
                 sql_command += " WHERE "
             else:
                 sql_command += " AND "
@@ -161,6 +155,8 @@ class DBWorker:
             for res in result:
                 if len(res) == 1:
                     ret.append(res[0])
+                else:
+                    ret.append(res)
             result = ret
         return result
 
@@ -176,14 +172,11 @@ class DBWorker:
         :param kwargs: As data
         """
 
-        data_type = type(data)
-        if data_type == dict:
-            data = list(data.items())
-        elif data_type == tuple:
-            data = list(data)
+        if type(data) == dict:
+            data = tuple(data.items())
 
         if len(kwargs) > 0:
-            data += list(kwargs.items())
+            data += tuple(kwargs.items())
 
         sql_command = f"INSERT INTO {tablename} ("
 
@@ -191,11 +184,8 @@ class DBWorker:
         for record in data:
             column = record[0]
             key = record[1]
-            key_type = type(key)
-            if key_type == tuple:
-                key = list(key)
-            elif not key_type == list:
-                key = [key]
+            if not type(key) == list:
+                key = (key,)
             keys.append(key)
             sql_command += f"{column}, "
         sql_command = sql_command[:-2]
@@ -229,30 +219,22 @@ class DBWorker:
         :param kwargs: As conditions
         """
 
-        cond_type = type(conditions)
-
-        if cond_type == tuple:
-            conditions = list(conditions)
-        elif cond_type == dict:
-            conditions = list(conditions.items())
+        if type(conditions) == dict:
+            conditions = tuple(conditions.items())
 
         if len(conditions) > 0:
-            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
-                conditions = [conditions]
+            if not (type(conditions[0]) in (tuple, list)):
+                conditions = (conditions,)
 
         if len(kwargs) > 0:
-            conditions += list(kwargs.items())
+            conditions += tuple(kwargs.items())
 
-        data_type = type(data)
-
-        if data_type == tuple:
-            data = list(data)
-        elif data_type == dict:
-            data = list(data.items())
+        if type(data) == dict:
+            data = tuple(data.items())
 
         if len(data) > 0:
-            if not (type(data[0]) == list or type(data[0]) == tuple):
-                data = [data]
+            if not (type(data[0]) in (tuple, list)):
+                data = (data,)
 
         sql_command = f"UPDATE {tablename} SET "
         for record in data:
@@ -289,19 +271,15 @@ class DBWorker:
         :param kwargs: as conditions
         """
 
-        cond_type = type(conditions)
-
-        if cond_type == tuple:
-            conditions = list(conditions)
-        elif cond_type == dict:
-            conditions = list(conditions.items())
+        if type(conditions) == dict:
+            conditions = tuple(conditions.items())
 
         if len(kwargs) > 0:
-            conditions += list(kwargs.items())
+            conditions += tuple(kwargs.items())
 
         if len(conditions) > 0:
-            if not (type(conditions[0]) == list or type(conditions[0]) == tuple):
-                conditions = [conditions]
+            if not (type(conditions[0])in (tuple, list)):
+                conditions = (conditions,)
 
         sql_command = f"DELETE FROM {tablename}"
         if len(conditions) > 0:
@@ -319,7 +297,7 @@ class DBWorker:
         self._execute_sql(sql_command)
 
     def check(self):
-        pass
+        pass  # TODO make check
 
     def remove_table(self, tablename: str) -> None:
         """
